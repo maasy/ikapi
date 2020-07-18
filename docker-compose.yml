@@ -1,0 +1,32 @@
+version: '3'
+services:
+  db:
+    image: mysql:8.0
+    ports:
+      - 3306:3306
+    volumes:
+      - ./mysql/initdb.d:/docker-entrypoint-initdb.db
+      - ./mysql/conf.d:/etc/mysql/conf.d
+      - db-data:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: ikapi
+      MYSQL_ROOT_PASSWORD: root
+      TZ: "Asia/Tokyo"
+
+  app:
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+    volumes:
+      - ./app:/app
+    ports:
+      - 8000:8000
+    command: ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0"]
+    depends_on:
+      - db
+    environment:
+      TZ: "Asia/Tokyo"
+    restart: always
+
+volumes:
+  db-data:
