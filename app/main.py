@@ -1,16 +1,14 @@
 from typing import List
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-
-from models import Users
 from tortoise.contrib.fastapi import HTTPNotFoundError, register_tortoise
+
+from routers import routers
 
 app = FastAPI(title="Tortoise ORM FastAPI example")
 
-
-class Status(BaseModel):
-    message: str
+for router in routers:
+    app.include_router(router)
 
 register_tortoise(
     app,

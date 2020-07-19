@@ -80,6 +80,11 @@ class Players(models.Model):
     shoes_sub_skill_2_id = fields.IntField()
     shoes_sub_skill_3_id = fields.IntField()
 
+User_Pydantic = pydantic_model_creator(Users, name="User")
+UserIn_Pydantic = pydantic_model_creator(Users,
+                                         name="UserIn",
+                                         exclude_readonly=True)
+
 Battle_Pydantic = pydantic_model_creator(Battles, name="Battle")
 BattleIn_Pydantic = pydantic_model_creator(Battles,
                                          name="BattleIn",
