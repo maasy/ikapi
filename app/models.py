@@ -6,8 +6,8 @@ class Users(models.Model):
     name = fields.CharField(max_length=20)
     cookie = fields.CharField(max_length=128)
     session_token = fields.CharField(max_length=256)
-    created_at = DatetimeField()
-    updated_at = DatetimeField()
+    created_at = fields.DatetimeField()
+    updated_at = fields.DatetimeField()
 
 class Battles(models.Model):
     id = fields.IntField(pk=True)
