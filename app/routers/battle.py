@@ -9,7 +9,7 @@ from fastapi import APIRouter
 import requests
 
 from models import User_Pydantic, UserIn_Pydantic, Battle_Pydantic
-from models import Users, Battles
+from models import Users, Battles, Players
 
 tags = ["battles"]
 router = APIRouter()
@@ -80,10 +80,53 @@ async def battle_update(user_id: int):
             continue
         try:
             await Battles.create(**battle)
+            await get_players(battle['no'], app_head, cookie)
         except:
             continue
 
     return results
+
+async def get_players(battle_number: int, app_head, cookie):
+    url = "https://app.splatoon2.nintendo.net/api/results/{}".format(battle_number)
+    battle = requests.get(url, headers=app_head, cookies=dict(iksm_session=cookie))
+    battle_data = json.loads(battle.text)
+    players = {}
+    players['battle_id'] = battle_number
+    players['nickname'] = battle_data['player_result']['player']['nickname']
+    players['player_rank'] = battle_data['player_result']['player']['player_rank']
+    players['star_rank'] = battle_data['player_result']['player']['star_rank']
+    players['principal_id'] = battle_data['player_result']['player']['principal_id']
+    players['is_x'] = battle_data['player_result']['player']['udemae']['is_x']
+    players['udemae'] = battle_data['player_result']['player']['udemae']['name']
+    players['s_plus_number'] = battle_data['player_result']['player']['udemae']['s_plus_number']
+    players['species'] = battle_data['player_result']['player']['player_type']['species']
+    players['style'] = battle_data['player_result']['player']['player_type']['style']
+
+    players['kill_count'] = battle_data['player_result']['kill_count']
+    players['assist_count'] = battle_data['player_result']['assist_count']
+    players['death_count'] = battle_data['player_result']['death_count']
+    players['special_count'] = battle_data['player_result']['special_count']
+    players['game_paint_point'] = battle_data['player_result']['game_paint_point']
+    players['sort_score'] = battle_data['player_result']['sort_score']
+
+    players['weapon_id'] = battle_data['player_result']['player']['weapon']['id']
+    players['head_gear_id'] = battle_data['player_result']['player']['head']['id']
+    players['clothes_gear_id'] = battle_data['player_result']['player']['clothes']['id']
+    players['shoes_gear_id'] = battle_data['player_result']['player']['shoes']['id']
+    players['head_main_skill_id'] = battle_data['player_result']['player']['head_skills']['main']['id']
+    players['head_sub_skill_1_id'] = battle_data['player_result']['player']['head_skills']['subs'][0]['id']
+    players['head_sub_skill_2_id'] = battle_data['player_result']['player']['head_skills']['subs'][1]['id']
+    players['head_sub_skill_3_id'] = battle_data['player_result']['player']['head_skills']['subs'][2]['id']
+    players['clothes_main_skill_id'] = battle_data['player_result']['player']['clothes_skills']['main']['id']
+    players['clothes_sub_skill_1_id'] = battle_data['player_result']['player']['clothes_skills']['subs'][0]['id']
+    players['clothes_sub_skill_2_id'] = battle_data['player_result']['player']['clothes_skills']['subs'][1]['id']
+    players['clothes_sub_skill_3_id'] = battle_data['player_result']['player']['clothes_skills']['subs'][2]['id']
+    players['shoes_main_skill_id'] = battle_data['player_result']['player']['shoes_skills']['main']['id']
+    players['shoes_sub_skill_1_id'] = battle_data['player_result']['player']['shoes_skills']['subs'][0]['id']
+    players['shoes_sub_skill_2_id'] = battle_data['player_result']['player']['shoes_skills']['subs'][1]['id']
+    players['shoes_sub_skill_3_id'] = battle_data['player_result']['player']['shoes_skills']['subs'][2]['id']
+
+    await Players.create(**players)
 
 async def gen_new_cookie(user, session_token):
     timestamp = int(time.time())
