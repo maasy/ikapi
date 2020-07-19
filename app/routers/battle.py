@@ -3,12 +3,13 @@ import time
 import uuid
 import json
 import asyncio
+import datetime
 
 from fastapi import APIRouter
 import requests
 
 from models import User_Pydantic, UserIn_Pydantic, Battle_Pydantic
-from models import Users
+from models import Users, Battles
 
 tags = ["battles"]
 router = APIRouter()
@@ -40,8 +41,49 @@ async def battle_update(user_id: int):
     if 'code' in json.loads(results_list.text):
         cookie = await gen_new_cookie(user, session_token)
         results_list = requests.get(url, headers=app_head, cookies=dict(iksm_session=cookie))
+    results = json.loads(results_list.text)["results"]
+    results.reverse()
 
-    return json.loads(results_list.text)
+    latest_battle = await Battles.filter(user_id=user_id).order_by('-no').get_or_none().limit(1)
+    latest_battle_no = 0
+    if latest_battle is not None:
+        latest_battle_no = latest_battle.no
+
+    for result in results:
+        battle = {}
+        battle['user_id'] = user_id
+        battle['no'] = int(result['battle_number'])
+        battle['game_mode'] = result['game_mode']['name']
+        battle['rule'] = result['rule']['name']
+        battle['type'] = result['type']
+        battle['stage_id'] = result['stage']['id']
+        battle['estimate_x_power'] = result['estimate_x_power']
+        battle['estimate_gachi_power'] = result['estimate_gachi_power']
+        battle['crown_players'] = result['crown_players']
+        battle['my_team_result'] = result['my_team_result']['key']
+        battle['other_team_result'] = result['other_team_result']['key']
+        battle['my_team_count'] = result['my_team_count']
+        battle['other_team_count'] = result['other_team_count']
+        battle['player_rank'] = result['player_rank']
+        battle['star_rank'] = result['star_rank']
+        battle['x_power'] = result['x_power']
+        battle['weapon_paint_point'] = result['weapon_paint_point']
+        battle['s_plus_number'] = result['udemae']['s_plus_number']
+        battle['is_number_reached'] = result['udemae']['is_number_reached']
+        battle['is_x'] = result['udemae']['is_x']
+        battle['number'] = result['udemae']['number']
+        battle['name'] = result['udemae']['name']
+        battle['start_time'] = datetime.datetime.fromtimestamp(result['start_time'])
+        battle['elapsed_time'] = result['elapsed_time']
+
+        if latest_battle_no >= battle['no']:
+            continue
+        try:
+            await Battles.create(**battle)
+        except:
+            continue
+
+    return results
 
 async def gen_new_cookie(user, session_token):
     timestamp = int(time.time())
